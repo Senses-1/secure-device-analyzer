@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from frontend.views import CSRFAwareIndexView
@@ -25,7 +25,8 @@ urlpatterns = [
 
     # Serves React index.html for frontend routes
     path("", CSRFAwareIndexView.as_view(), name="home"),
-    re_path(r"^(?!admin/).*", CSRFAwareIndexView.as_view()),
+    re_path(r"^(?!admin/|vulnerabilities/).*", CSRFAwareIndexView.as_view()),
+    path("vulnerabilities/", include('core.vulnerabilities.urls')),
 ]
 
 if settings.DEBUG:

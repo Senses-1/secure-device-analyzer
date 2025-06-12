@@ -1,48 +1,48 @@
 from django.db import models
 
-class AV(models.Model):
+class attack_vector(models.Model):
     name = models.CharField(max_length=1, unique=True)
 
     def __str__(self):
         return self.name
 
-class AC(models.Model):
+class attack_complexity(models.Model):
     name = models.CharField(max_length=1, unique=True)
 
     def __str__(self):
         return self.name
 
-class PR(models.Model):
+class privileges_required(models.Model):
     name = models.CharField(max_length=1, unique=True)
 
     def __str__(self):
         return self.name
     
-class UI(models.Model):
+class user_interaction(models.Model):
     name = models.CharField(max_length=1, unique=True)
 
     def __str__(self):
         return self.name
 
-class S(models.Model):
+class scope(models.Model):
     name = models.CharField(max_length=1, unique=True)
 
     def __str__(self):
         return self.name
 
-class C(models.Model):
+class confidentiality(models.Model):
     name = models.CharField(max_length=1, unique=True)
 
     def __str__(self):
         return self.name
 
-class I(models.Model):
+class integrity(models.Model):
     name = models.CharField(max_length=1, unique=True)
 
     def __str__(self):
         return self.name
 
-class A(models.Model):
+class availability(models.Model):
     name = models.CharField(max_length=1, unique=True)
 
     def __str__(self):
@@ -51,18 +51,16 @@ class A(models.Model):
 class Vulnerability(models.Model):
     cve = models.CharField(max_length=255, unique=True)
     BaseScore = models.DecimalField(decimal_places=1, max_digits=3)
-    BaseSeverity = models.CharField(max_length=8, unique=True)
     ExploitabilityScore	= models.DecimalField(decimal_places=1, max_digits=3)
-    Exploitability = models.DecimalField(decimal_places=2, max_digits=3)
     ІmpactScore	= models.DecimalField(decimal_places=1, max_digits=3)
-    AV = models.ForeignKey(AV, on_delete=models.CASCADE)
-    AC = models.ForeignKey(AC, on_delete=models.CASCADE)
-    PR = models.ForeignKey(PR, on_delete=models.CASCADE)
-    UI = models.ForeignKey(UI, on_delete=models.CASCADE)
-    S = models.ForeignKey(S, on_delete=models.CASCADE)
-    C = models.ForeignKey(C, on_delete=models.CASCADE)
-    I = models.ForeignKey(I, on_delete=models.CASCADE)
-    A = models.ForeignKey(A, on_delete=models.CASCADE)
+    attack_vector = models.ForeignKey(attack_vector, on_delete=models.CASCADE)
+    attack_complexity = models.ForeignKey(attack_complexity, on_delete=models.CASCADE)
+    privileges_required = models.ForeignKey(privileges_required, on_delete=models.CASCADE)
+    user_interaction = models.ForeignKey(user_interaction, on_delete=models.CASCADE)
+    scope = models.ForeignKey(scope, on_delete=models.CASCADE)
+    confidentiality = models.ForeignKey(confidentiality, on_delete=models.CASCADE)
+    integrity = models.ForeignKey(integrity, on_delete=models.CASCADE)
+    availability = models.ForeignKey(availability, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.cve
