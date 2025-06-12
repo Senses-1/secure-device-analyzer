@@ -1,0 +1,11 @@
+{
+  "name": "django-reactjs-heroku-template",
+  "version": "1.0.0",
+  "scripts": {
+    "postinstall": "cd frontend && npm install",
+    "heroku-postbuild": "cd frontend && npm run build"
+  },
+  "engines": {
+    "node": "22.12.0"
+  }
+}
