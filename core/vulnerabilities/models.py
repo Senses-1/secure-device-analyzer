@@ -52,7 +52,7 @@ class Vulnerability(models.Model):
     cve = models.CharField(max_length=255, unique=True)
     BaseScore = models.DecimalField(decimal_places=1, max_digits=3)
     ExploitabilityScore	= models.DecimalField(decimal_places=1, max_digits=3)
-    ІmpactScore	= models.DecimalField(decimal_places=1, max_digits=3)
+    ImpactScore	= models.DecimalField(decimal_places=1, max_digits=3)
     attack_vector = models.ForeignKey(attack_vector, on_delete=models.CASCADE)
     attack_complexity = models.ForeignKey(attack_complexity, on_delete=models.CASCADE)
     privileges_required = models.ForeignKey(privileges_required, on_delete=models.CASCADE)

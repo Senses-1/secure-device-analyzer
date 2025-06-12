@@ -7,19 +7,18 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Device, Vendor, Type, Vulnerability, attack_vector, attack_complexity, privileges_required, user_interaction, scope, confidentiality, integrity, availability
 from .filters import data_by_filters
 
+
 @csrf_exempt
 def parse_vector_string(vector_string: str) -> dict:
-    # Удаляем префикс CVSS:3.1/
+    # Удаляем префикс CVSS:3.X/
+    vector_string = vector_string.strip()
     if vector_string.startswith("CVSS:"):
-        parts = vector_string.split("/")
-        parts = parts[1:] if len(parts) > 1 else []
-    else:
-        parts = vector_string.split("/")
-
+        vector_string = vector_string.split("/", 1)[-1]  # Обрезаем всё до первой /
+    
     result = {}
-    for item in parts:
+    for item in vector_string.split("/"):
         if ":" in item:
-            key, value = item.split(":")
+            key, value = item.split(":", 1)
             result[key] = value
     return result
 
@@ -28,12 +27,13 @@ def upload_csv(request):
     if request.method == 'POST' and request.FILES.get('file'):
         file = request.FILES['file']
         decoded_file = file.read().decode('utf-8')
-        reader = csv.DictReader(io.StringIO(decoded_file))
+        reader = csv.DictReader(io.StringIO(decoded_file), delimiter=';')
 
         created = 0
         for row in reader:
             try:
-                vector = parse_vector_string(row.get("vector", ""))
+                cleaned_row = {k.strip(): (v.strip() if v else "") for k, v in row.items()}
+                vector = parse_vector_string(cleaned_row.get("VectorString", ""))
 
                 av = attack_vector.objects.get_or_create(name=vector.get("AV", row.get("attack_vector", "")))[0]
                 ac = attack_complexity.objects.get_or_create(name=vector.get("AC", row.get("attack_complexity", "")))[0]
@@ -43,16 +43,16 @@ def upload_csv(request):
                 cf = confidentiality.objects.get_or_create(name=vector.get("C", row.get("confidentiality", "")))[0]
                 it = integrity.objects.get_or_create(name=vector.get("I", row.get("integrity", "")))[0]
                 avl = availability.objects.get_or_create(name=vector.get("A", row.get("availability", "")))[0]
-                vendor = Vendor.objects.get_or_create(name=row[" Vendor"])[0]
-                type_ = Type.objects.get_or_create(name=row[" Type"])[0]
+                vendor = Vendor.objects.get_or_create(name=row["Vendor"])[0]
+                type_ = Type.objects.get_or_create(name=row["Type"])[0]
                 device = Device.objects.get_or_create(name=row["Device"], vendor=vendor, type=type_)[0]
 
                 vuln, _ = Vulnerability.objects.get_or_create(
-                    cve=row[" CVE"],
+                    cve=row["CVE"],
                     defaults={
-                        "BaseScore": row[" BaseScore"],
-                        "ExploitabilityScore": row[" ExploitabilityScore"],
-                        "ІmpactScore": row[" ІmpactScore"],
+                        "BaseScore": row["BaseScore"],
+                        "ExploitabilityScore": row["ExploitabilityScore"],
+                        "ImpactScore": row["ImpactScore"],
                         "attack_vector": av,
                         "attack_complexity": ac,
                         "privileges_required": pr,
@@ -81,7 +81,7 @@ def get_filter_options(request):
     base_scores = list(Vulnerability.objects.values_list('BaseScore', flat=True).distinct())
     base_severities = list(Vulnerability.objects.values_list('BaseSeverity', flat=True).distinct())
     exploitability_scores = list(Vulnerability.objects.values_list('ExploitabilityScore', flat=True).distinct())
-    impact_scores = list(Vulnerability.objects.values_list('ІmpactScore', flat=True).distinct())
+    impact_scores = list(Vulnerability.objects.values_list('ImpactScore', flat=True).distinct())
 
     attack_vectors = list(attack_vector.objects.values_list('name', flat=True).distinct())
     attack_complexitys = list(attack_complexity.objects.values_list('name', flat=True).distinct())
