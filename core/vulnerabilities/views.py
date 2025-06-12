@@ -74,14 +74,8 @@ def upload_csv(request):
     return JsonResponse({"error": "Нет файла в запросе"}, status=400)
 
 def get_filter_options(request):
-    devices = list(Device.objects.values_list('name', flat=True).distinct())
     vendors = list(Vendor.objects.values_list('name', flat=True).distinct())
     types = list(Type.objects.values_list('name', flat=True).distinct())
-    
-    base_scores = list(Vulnerability.objects.values_list('BaseScore', flat=True).distinct())
-    base_severities = list(Vulnerability.objects.values_list('BaseSeverity', flat=True).distinct())
-    exploitability_scores = list(Vulnerability.objects.values_list('ExploitabilityScore', flat=True).distinct())
-    impact_scores = list(Vulnerability.objects.values_list('ImpactScore', flat=True).distinct())
 
     attack_vectors = list(attack_vector.objects.values_list('name', flat=True).distinct())
     attack_complexitys = list(attack_complexity.objects.values_list('name', flat=True).distinct())
@@ -93,13 +87,8 @@ def get_filter_options(request):
     availabilitys = list(availability.objects.values_list('name', flat=True).distinct())
 
     data = {
-        "devices": devices,
         "vendors": vendors,
         "types": types,
-        "base_scores": base_scores,
-        "base_severities": base_severities,
-        "exploitability_scores": exploitability_scores,
-        "impact_scores": impact_scores,
         "attack_vectors": attack_vectors,
         "attack_complexitys": attack_complexitys,
         "privileges_requireds": privileges_requireds,

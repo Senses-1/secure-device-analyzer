@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Filters from "../components/Filters";
 
 const Home: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -33,23 +34,29 @@ const Home: React.FC = () => {
     };
     return (
         <div className="p-4">
-        <h1 className="text-xl font-bold mb-4">Загрузка CSV</h1>
+            <h1 className="text-xl font-bold mb-4">Загрузка CSV</h1>
 
-        <input
+            {/* Загрузка CSV */}
+            <input
             type="file"
             accept=".csv"
             onChange={handleFileChange}
             className="mb-2"
-        />
-        <br />
-        <button
+            />
+            <br />
+            <button
             onClick={uploadFile}
             className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
+            >
             Загрузить
-        </button>
+            </button>
 
-        <p className="mt-4 text-sm text-gray-700">{status}</p>
+            <p className="mt-4 text-sm text-gray-700">{status}</p>
+
+            {/* === Здесь вставляем фильтры === */}
+            <div className="mt-10">
+            <Filters />
+            </div>
         </div>
     )
 }
