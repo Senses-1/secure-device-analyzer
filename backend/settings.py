@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = IS_DEV
 
-ALLOWED_HOSTS = ['*' if IS_DEV else '']
+ALLOWED_HOSTS = ['*' if IS_DEV else 'secure-device-analyzer-c2dd7f29c74a.herokuapp.com']
 
 
 # Application definition
@@ -87,10 +87,11 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME'),
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASS'),
-        'HOST': 'localhost',  # or the remote host IP/domain
+        'HOST': os.getenv('DB_HOST'),  # or the remote host IP/domain
         'PORT': '5432',        # default PostgreSQL port
     }
 }
+
 
 
 
