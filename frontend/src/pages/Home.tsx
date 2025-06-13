@@ -52,11 +52,6 @@ const Home: React.FC = () => {
             </button>
 
             <p className="mt-4 text-sm text-gray-700">{status}</p>
-
-            {/* === Здесь вставляем фильтры === */}
-            <div className="mt-10">
-            <Filters />
-            </div>
         </div>
     )
 }
