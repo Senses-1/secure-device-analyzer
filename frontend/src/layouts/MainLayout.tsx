@@ -1,14 +1,13 @@
 import { Outlet } from 'react-router-dom'
-import Test from "../components/Test";
+import Filters from "../components/Filters";
 
 export default function MainLayout() {
     return (
         <div>
-            <header className='flex flex-col items-center bg-yellow-500'>
-                <h1>Very beautiful project</h1>
+            <header className='flex flex-col items-center bg-yellow-600'>
                 {/* === Здесь вставляем фильтры === */}
-                <div className="mt-1">
-                <Test />
+                <div>
+                <Filters />
                 </div>
             </header>
 
@@ -18,7 +17,7 @@ export default function MainLayout() {
 
             <footer className='flex flex-col items-center bg-yellow-500'>
                 {/* Footer will be added here */}
-                <p>© 2025</p>
+                <p>© 2025 Secure Device Analyzer</p>
             </footer>
         </div>
     )

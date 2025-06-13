@@ -45,15 +45,16 @@ const CustomSlider: React.FC<CustomSliderProps> = ({ min, max, value, onChange, 
 
   const calcPercent = (val: number) => ((val - min) / (max - min)) * 100;
 
-  return (
-    <div className="w-full max-w-md px-4 py-4 flex items-center gap-4">
-        {label && <span className="w-24 text-sm font-medium text-gray-700 top">{label}</span>}
-        <div className="w-full max-w-md px-4 py-4 flex items-center gap-4">
+    return (
+    <div className="w-full max-w-md px-4 py-4">
+        {label && (
+        <div className="text-center mb-2 text-sm font-medium text-gray-700">
+            {label}
+        </div>
+        )}
+        <div className="flex items-center gap-4">
             <div className="flex-1">
-                <div
-                ref={trackRef}
-                className="relative h-2 bg-gray-300 rounded"
-                >
+                <div ref={trackRef} className="relative h-2 bg-gray-300 rounded">
                 <div
                     className="absolute h-2 bg-blue-500 rounded"
                     style={{
@@ -81,7 +82,7 @@ const CustomSlider: React.FC<CustomSliderProps> = ({ min, max, value, onChange, 
             </div>
         </div>
     </div>
-  );
+    );
 };
 
 export default CustomSlider;

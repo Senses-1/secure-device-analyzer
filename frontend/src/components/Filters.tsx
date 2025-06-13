@@ -1,17 +1,97 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import RangeSlider from "./RangeSlider";
 
-const OPTIONS = {
-  vendors: ["Vendor A", "Vendor B", "Vendor C"],
-  types: ["Type 1", "Type 2", "Type 3"],
-  attack_vectors: ["Network", "Adjacent", "Local", "Physical"],
-  attack_complexitys: ["Low", "High"],
-  privileges_requireds: ["None", "Low", "High"],
-  user_interactions: ["None", "Required"],
-  scopes: ["Unchanged", "Changed"],
-  confidentialitys: ["None", "Low", "High"],
-  integritys: ["None", "Low", "High"],
-  availabilitys: ["None", "Low", "High"],
+const Devices = {
+    vendor: ["Vendor A", "Vendor B", "Vendor C"],
+    type: ["Type 1", "Type 2", "Type 3"],
+}
+
+const Exploitability_Metrics = {
+    attack_vector: ["Network", "Adjacent", "Local", "Physical"],
+    attack_complexity: ["Low", "High"],
+    privileges_required: ["None", "Low", "High"],
+    user_interaction: ["None", "Required"],
+    scope: ["Unchanged", "Changed"],
+}
+
+const Impact_Metrics = {
+    confidentiality: ["None", "Low", "High"],
+    integrity: ["None", "Low", "High"],
+    availability: ["None", "Low", "High"],
+}
+
+const HoverGroupDropdown = ({
+  title,
+  items,
+  selectedFilters,
+  setSelectedFilters,
+  sliderValue,
+  setSliderValue,
+  sliderLabel,
+}: {
+  title: string;
+  items: Record<string, string[]>;
+  selectedFilters: Record<string, string[]>;
+  setSelectedFilters: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
+  sliderValue: [number, number];
+  setSliderValue: (val: [number, number]) => void;
+  sliderLabel: string;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative w-64" ref={dropdownRef}>
+      <div
+        className="cursor-pointer font-bold text-center border rounded px-4 py-2 bg-yellow-700 text-white transition"
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
+        {title}
+      </div>
+
+      {isOpen && (
+        <div className="absolute left-0 mt-1 bg-white border rounded shadow-lg p-2 w-64 z-10 max-h-[400px] overflow-y-auto">
+          {/* Фильтры */}
+          {Object.entries(items).map(([key, values]) => (
+            <FilterDropdown
+              key={key}
+              label={key.replace(/_/g, " ").toUpperCase()}
+              options={values}
+              selected={selectedFilters[key]}
+              setSelected={(val) =>
+                setSelectedFilters((prev) => ({ ...prev, [key]: val }))
+              }
+            />
+          ))}
+        {/* Добавляем слайдер */}
+          <RangeSlider
+            label={sliderLabel}
+            min={0}
+            max={10}
+            value={sliderValue}
+            onChange={setSliderValue}
+          />
+        </div>
+      )}
+    </div>
+  );
 };
 
 const FilterDropdown = ({
@@ -55,88 +135,71 @@ const FilterDropdown = ({
 };
 
 const FiltersPanel = () => {
-  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(
-    Object.fromEntries(
-      Object.keys(OPTIONS).map((key) => [key, []])
-    )
-  );
+    const allFilterKeys = [
+        ...Object.keys(Devices),
+        ...Object.keys(Exploitability_Metrics),
+        ...Object.keys(Impact_Metrics),
+    ];
 
-  const [baseScores, setBaseScores] = useState<[number, number]>([1, 10]);
-  const [exploitabilityScores, setExploitabilityScores] = useState<[number, number]>([1, 10]);
-  const [impactScores, setImpactScores] = useState<[number, number]>([1, 10]);
-
-  const handleSubmit = async () => {
-    const payload = {
-      ...selectedFilters,
-      base_scores: baseScores,
-      exploitability_scores: exploitabilityScores,
-      impact_scores: impactScores,
+    const getInitialSelectedFilters = (): Record<string, string[]> => {
+    return {
+        ...Object.fromEntries(
+        Object.entries(Devices).map(([key, values]) => [key, [...values]])
+        ),
+        ...Object.fromEntries(
+        Object.entries(Exploitability_Metrics).map(([key, values]) => [key, [...values]])
+        ),
+        ...Object.fromEntries(
+        Object.entries(Impact_Metrics).map(([key, values]) => [key, [...values]])
+        ),
+    };
     };
 
-    try {
-      const res = await fetch("/api/filters", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      console.log("Response:", data);
-    } catch (err) {
-      console.error("Ошибка при отправке:", err);
-    }
-  };
+    const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(
+    getInitialSelectedFilters()
+    );
 
-  return (
-    <div className="p-4 max-w-7xl mx-auto">
-      <div className="flex gap-6">
-        {/* Левая колонка: чекбоксы */}
-        <div className="w-1/2">
-          {Object.entries(OPTIONS).map(([key, options]) => (
-            <FilterDropdown
-              key={key}
-              label={key.replace(/_/g, " ").toUpperCase()}
-              options={options}
-              selected={selectedFilters[key]}
-              setSelected={(val) =>
-                setSelectedFilters((prev) => ({ ...prev, [key]: val }))
-              }
+    const [baseScores, setBaseScores] = useState<[number, number]>([0.0, 10.0]);
+    const [exploitabilityScores, setExploitabilityScores] = useState<[number, number]>([0.0, 10.0]);
+    const [impactScores, setImpactScores] = useState<[number, number]>([0.0, 10.0]);
+
+    return (
+        <div className="flex gap-10 p-4 bg-yellow-600 text-black w-full">
+            <HoverGroupDropdown
+            title="Devices"
+            items={Devices}
+            selectedFilters={selectedFilters}
+            setSelectedFilters={setSelectedFilters}
+            sliderValue={baseScores}
+            setSliderValue={setBaseScores}
+            sliderLabel="Base Score"
             />
-          ))}
-        </div>
-
-        {/* Правая колонка: слайдеры */}
-        <div className="w-1/2 space-y-4">
-          <RangeSlider
-            label="Base Scores"
-            min={0.1}
-            max={10.0}
-            value={baseScores}
-            onChange={setBaseScores}
-          />
-          <RangeSlider
-            label="Exploitability Scores"
-            min={0.1}
-            max={10.0}
-            value={exploitabilityScores}
-            onChange={setExploitabilityScores}
-          />
-          <RangeSlider
-            label="Impact Scores"
-            min={0.1}
-            max={10.0}
-            value={impactScores}
-            onChange={setImpactScores}
-          />
-          <button
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={handleSubmit}
-          >
+            <HoverGroupDropdown
+            title="Exploitability Metrics"
+            items={Exploitability_Metrics}
+            selectedFilters={selectedFilters}
+            setSelectedFilters={setSelectedFilters}
+            sliderValue={exploitabilityScores}
+            setSliderValue={setExploitabilityScores}
+            sliderLabel="Exploitability Score"
+            />
+            <HoverGroupDropdown
+            title="Impact Metrics"
+            items={Impact_Metrics}
+            selectedFilters={selectedFilters}
+            setSelectedFilters={setSelectedFilters}
+            sliderValue={impactScores}
+            setSliderValue={setImpactScores}
+            sliderLabel="Impact Score"
+            />
+            <button
+            className="font-bold text-center border border-white rounded px-4 py-2 w-64 bg-gradient-to-br from-yellow-600 to-yellow-800 text-white hover:from-yellow-700 hover:to-yellow-900 transition shadow-md hover:shadow-lg"
+            >
             Применить фильтры
-          </button>
+            </button>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
+
 
 export default FiltersPanel;
