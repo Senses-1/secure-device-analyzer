@@ -2,23 +2,65 @@ import React, { useState, useRef, useEffect } from "react";
 import RangeSlider from "./RangeSlider";
 
 const Devices = {
-    vendor: ["Vendor A", "Vendor B", "Vendor C"],
-    type: ["Type 1", "Type 2", "Type 3"],
-}
+  vendor: [
+    { label: "Cisco", value: "Cisco" },
+    { label: "HPE", value: "Hpe" },
+    { label: "Huawei", value: "Huawei" },
+    { label: "Juniper", value: "Juniper" },
+    { label: "MikroTik", value: "Mikrotik" },
+  ],
+  type: [
+    { label: "Access Point", value: "access-point" },
+    { label: "Controller", value: "controller" },
+    { label: "Firewall", value: "firewall" },
+    { label: "Router", value: "router" },
+    { label: "Switch", value: "switch" },
+  ],
+};
 
 const Exploitability_Metrics = {
-    attack_vector: ["Network", "Adjacent", "Local", "Physical"],
-    attack_complexity: ["Low", "High"],
-    privileges_required: ["None", "Low", "High"],
-    user_interaction: ["None", "Required"],
-    scope: ["Unchanged", "Changed"],
-}
+  attack_vector: [
+    { label: "Network", value: "N" },
+    { label: "Adjacent", value: "A" },
+    { label: "Local", value: "L" },
+    { label: "Physical", value: "P" },
+  ],
+  attack_complexity: [
+    { label: "Low", value: "L" },
+    { label: "High", value: "H" },
+  ],
+  privileges_required: [
+    { label: "None", value: "N" },
+    { label: "Low", value: "L" },
+    { label: "High", value: "H" },
+  ],
+  user_interaction: [
+    { label: "None", value: "N" },
+    { label: "Required", value: "R" },
+  ],
+  scope: [
+    { label: "Unchanged", value: "U" },
+    { label: "Changed", value: "C" },
+  ],
+};
 
 const Impact_Metrics = {
-    confidentiality: ["None", "Low", "High"],
-    integrity: ["None", "Low", "High"],
-    availability: ["None", "Low", "High"],
-}
+  confidentiality: [
+    { label: "None", value: "N" },
+    { label: "Low", value: "L" },
+    { label: "High", value: "H" },
+  ],
+  integrity: [
+    { label: "None", value: "N" },
+    { label: "Low", value: "L" },
+    { label: "High", value: "H" },
+  ],
+  availability: [
+    { label: "None", value: "N" },
+    { label: "Low", value: "L" },
+    { label: "High", value: "H" },
+  ],
+};
 
 const HoverGroupDropdown = ({
   title,
@@ -30,7 +72,7 @@ const HoverGroupDropdown = ({
   sliderLabel,
 }: {
   title: string;
-  items: Record<string, string[]>;
+  items: Record<string, { label: string; value: string }[]>;
   selectedFilters: Record<string, string[]>;
   setSelectedFilters: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
   sliderValue: [number, number];
@@ -74,7 +116,7 @@ const HoverGroupDropdown = ({
               key={key}
               label={key.replace(/_/g, " ").toUpperCase()}
               options={values}
-              selected={selectedFilters[key]}
+              selected={selectedFilters[key] || []}
               setSelected={(val) =>
                 setSelectedFilters((prev) => ({ ...prev, [key]: val }))
               }
@@ -101,11 +143,12 @@ const FilterDropdown = ({
   setSelected,
 }: {
   label: string;
-  options: string[];
+  options: { label: string; value: string }[];
   selected: string[];
   setSelected: (selected: string[]) => void;
 }) => {
   const toggleOption = (option: string) => {
+    console.log(option);
     setSelected(
       selected.includes(option)
         ? selected.filter((o) => o !== option)
@@ -118,14 +161,14 @@ const FilterDropdown = ({
       <details className="border rounded p-2">
         <summary className="cursor-pointer font-semibold">{label}</summary>
         <div className="pl-4 pt-2 flex flex-col gap-1">
-          {options.map((opt) => (
-            <label key={opt} className="flex items-center gap-2">
+          {options.map(({ label, value }) => (
+            <label key={value} className="flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={selected.includes(opt)}
-                onChange={() => toggleOption(opt)}
+                checked={selected.includes(value)}
+                onChange={() => toggleOption(value)}
               />
-              {opt}
+              {label}
             </label>
           ))}
         </div>
@@ -144,13 +187,13 @@ const FiltersPanel = () => {
     const getInitialSelectedFilters = (): Record<string, string[]> => {
     return {
         ...Object.fromEntries(
-        Object.entries(Devices).map(([key, values]) => [key, [...values]])
+        Object.entries(Devices).map(([key, values]) => [key, values.map((v) => v.value)])
         ),
         ...Object.fromEntries(
-        Object.entries(Exploitability_Metrics).map(([key, values]) => [key, [...values]])
+        Object.entries(Exploitability_Metrics).map(([key, values]) => [key, values.map((v) => v.value)])
         ),
         ...Object.fromEntries(
-        Object.entries(Impact_Metrics).map(([key, values]) => [key, [...values]])
+        Object.entries(Impact_Metrics).map(([key, values]) => [key, values.map((v) => v.value)])
         ),
     };
     };
@@ -195,7 +238,7 @@ const FiltersPanel = () => {
             <button
             className="font-bold text-center border border-white rounded px-4 py-2 w-64 bg-gradient-to-br from-yellow-600 to-yellow-800 text-white hover:from-yellow-700 hover:to-yellow-900 transition shadow-md hover:shadow-lg"
             >
-            Применить фильтры
+            Apply filters
             </button>
         </div>
     );
