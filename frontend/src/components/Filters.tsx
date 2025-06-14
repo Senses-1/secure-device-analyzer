@@ -200,6 +200,16 @@ const FiltersPanel = () => {
     const [exploitabilityScores, setExploitabilityScores] = useState<[number, number]>([0.0, 10.0]);
     const [impactScores, setImpactScores] = useState<[number, number]>([0.0, 10.0]);
 
+    const fetchAndLog = (url: string, label: string) => {
+      fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(`📊 Ответ с бэка (${label}):`, data);
+          // Место для дальнейшей обработки, если нужно
+        })
+        .catch((err) => console.error(`❌ Ошибка запроса (${label}):`, err));
+    };
+
     const applyFilters = () => {
       const params = new URLSearchParams();
 
@@ -225,15 +235,19 @@ const FiltersPanel = () => {
         console.log(`${key} = ${value}`);
       }
 
-      // Отправляем GET-запрос
-      fetch(`/vulnerabilities/count_vulnerabilities_by_vendor/?${params.toString()}`)
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("Ответ с бэка:", data);
-          // тут можно будет обновить график, таблицу и т.д.
-        })
-        .catch((err) => console.error("Ошибка запроса:", err));
-    };
+      // Список конечных точек
+      const endpoints = [
+        { url: "/vulnerabilities/count_vulnerabilities_by_vendor/", label: "по вендорам" },
+        { url: "/vulnerabilities/count_vulnerabilities_by_type/", label: "по типам устройств" },
+        { url: "/vulnerabilities/top_10_devices_by_base_score/", label: "топ 10" },
+        // можно добавлять новые эндпоинты здесь
+      ];
+
+      // Запускаем все fetch-запросы
+      endpoints.forEach(({ url, label }) => {
+        fetchAndLog(`${url}?${params.toString()}`, label);
+        });
+      };
 
     return (
         <div className="flex gap-10 p-4 bg-yellow-600 text-black w-full">

@@ -2,10 +2,12 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import csv
 import io
-from django.db.models import Count, Q
+from django.db.models import Count, Avg, Q
 from django.views.decorators.csrf import csrf_exempt
 from .models import Device, Vendor, Type, Vulnerability, attack_vector, attack_complexity, privileges_required, user_interaction, scope, confidentiality, integrity, availability
 from .filters import data_by_filters
+from collections import defaultdict
+import traceback
 
 
 @csrf_exempt
@@ -73,54 +75,117 @@ def upload_csv(request):
 
     return JsonResponse({"error": "Нет файла в запросе"}, status=400)
 
-def get_filter_options(request):
-    vendors = list(Vendor.objects.values_list('name', flat=True).distinct())
-    types = list(Type.objects.values_list('name', flat=True).distinct())
-
-    attack_vectors = list(attack_vector.objects.values_list('name', flat=True).distinct())
-    attack_complexitys = list(attack_complexity.objects.values_list('name', flat=True).distinct())
-    privileges_requireds = list(privileges_required.objects.values_list('name', flat=True).distinct())
-    user_interactions = list(user_interaction.objects.values_list('name', flat=True).distinct())
-    scopes = list(scope.objects.values_list('name', flat=True).distinct())
-    confidentialitys = list(confidentiality.objects.values_list('name', flat=True).distinct())
-    integritys = list(integrity.objects.values_list('name', flat=True).distinct())
-    availabilitys = list(availability.objects.values_list('name', flat=True).distinct())
-
-    data = {
-        "vendors": vendors,
-        "types": types,
-        "attack_vectors": attack_vectors,
-        "attack_complexitys": attack_complexitys,
-        "privileges_requireds": privileges_requireds,
-        "user_interactions": user_interactions,
-        "scopes": scopes,
-        "confidentialitys": confidentialitys,
-        "integritys": integritys,
-        "availabilitys": availabilitys
-    }
-
-    return JsonResponse(data)
-
 def count_vulnerabilities_by_vendor(request):
-    print("Полученные GET-параметры:")
-    vuln_filter, device_filter = data_by_filters(request)
-    for k, v in request.GET.lists():
-        print(f"{k} = {v}")
+    try:
+        vuln_filter, device_filter = data_by_filters(request)
+        devices = Device.objects.filter(device_filter)
+        result = {}
+        for vendor in Vendor.objects.all():
+            vendor_devices = devices.filter(vendor=vendor)
+            vulnerabilities = Vulnerability.objects.filter(vuln_filter, device__in=vendor_devices).distinct()
+            result[vendor.name] = vulnerabilities.count()
+        
+        return JsonResponse(result)
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
 
-    print("Кол-во Vulnerability ДО фильтрации:", Vulnerability.objects.count())
-    print("Кол-во Device ДО фильтрации:", Device.objects.count())
-    print("Сформированный vuln_filter:", vuln_filter)
-    print("Сформированный device_filter:", device_filter)
+def count_vulnerabilities_by_type(request):
+    try:
+        vuln_filter, device_filter = data_by_filters(request)
+        devices = Device.objects.filter(device_filter)
+        result = {}
+        for device_type in Type.objects.all():
+            type_devices = devices.filter(type=device_type)
+            vulnerabilities = Vulnerability.objects.filter(vuln_filter, device__in=type_devices).distinct()
+            result[device_type.name] = vulnerabilities.count()
+        
+        return JsonResponse(result)
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
 
-    vulns = Vulnerability.objects.filter(vuln_filter)
-    print("Кол-во Vulnerability ПОСЛЕ фильтрации:", vulns.count())
-    devices = Device.objects.filter(device_filter)
-    print("Кол-во Device ПОСЛЕ фильтрации:", devices.count())
+def top_10_devices_by_base_score(request):
+    try:
+        vuln_filter, device_filter = data_by_filters(request)
 
-    result = {}
-    for vendor in Vendor.objects.all():
-        vendor_devices = devices.filter(vendor=vendor)
-        vulnerabilities = Vulnerability.objects.filter(vuln_filter, device__in=vendor_devices).distinct()
-        result[vendor.name] = vulnerabilities.count()
-    
-    return JsonResponse(result)
+        filtered_vulns = Vulnerability.objects.filter(vuln_filter)
+
+        devices = (
+            Device.objects
+            .filter(device_filter)
+            .annotate(
+                avg_base_score=Avg('Vulnerabilities__BaseScore', filter=Q(Vulnerabilities__in=filtered_vulns)),
+                avg_exploitability_score=Avg('Vulnerabilities__ExploitabilityScore', filter=Q(Vulnerabilities__in=filtered_vulns)),
+                avg_impact_score=Avg('Vulnerabilities__ImpactScore', filter=Q(Vulnerabilities__in=filtered_vulns)),
+                vuln_count=Count('Vulnerabilities', filter=Q(Vulnerabilities__in=filtered_vulns))
+            )
+            .select_related('type', 'vendor')
+            .distinct()
+        )
+
+        type_device_map = defaultdict(lambda: {'top': [], 'bottom': []})
+
+        for dtype in Type.objects.all():
+            typed_devices = [d for d in devices if d.type == dtype]
+
+            # Заменим None на 0 явно (для стабильности)
+            for d in typed_devices:
+                if d.avg_base_score is None:
+                    d.avg_base_score = 0
+
+            total = len(typed_devices)
+            if total == 0:
+                continue
+
+            # Сортируем по убыванию
+            sorted_desc = sorted(typed_devices, key=lambda d: d.avg_base_score, reverse=True)
+            # Сортируем по возрастанию
+            sorted_asc = sorted(typed_devices, key=lambda d: d.avg_base_score)
+
+            if total <= 10:
+                # Все устройства идут в bottom (по возрастанию)
+                type_device_map[dtype.name]['bottom'] = [
+                    {
+                        'device': d.name,
+                        'avg_base_score': round(d.avg_base_score, 2),
+                        'avg_exploitability_score': round(d.avg_exploitability_score or 0, 2),
+                        'avg_impact_score': round(d.avg_impact_score or 0, 2),
+                        'vuln_count': d.vuln_count,
+                    }
+                    for d in sorted_asc
+                ]
+            else:
+                # Топ 10: только устройства с base_score > 0
+                top_10 = [d for d in sorted_desc if d.avg_base_score > 0][:10]
+
+                # Bottom 10 (можно с 0)
+                bottom_candidates = [d for d in sorted_asc if d not in top_10][:10]
+
+                type_device_map[dtype.name]['top'] = [
+                    {
+                        'device': d.name,
+                        'avg_base_score': round(d.avg_base_score, 2),
+                        'avg_exploitability_score': round(d.avg_exploitability_score or 0, 2),
+                        'avg_impact_score': round(d.avg_impact_score or 0, 2),
+                        'vuln_count': d.vuln_count,
+                    }
+                    for d in top_10
+                ]
+
+                type_device_map[dtype.name]['bottom'] = [
+                    {
+                        'device': d.name,
+                        'avg_base_score': round(d.avg_base_score, 2),
+                        'avg_exploitability_score': round(d.avg_exploitability_score or 0, 2),
+                        'avg_impact_score': round(d.avg_impact_score or 0, 2),
+                        'vuln_count': d.vuln_count,
+                    }
+                    for d in bottom_candidates
+                ]
+
+        return JsonResponse(type_device_map)
+
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
