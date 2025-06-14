@@ -56,7 +56,15 @@ const Home: React.FC = () => {
     ([name, value]) => ({ name, value: Number(value) })
     );
 
-    const filteredTypeData = typeData.filter((item) => item.value > 0);
+    const filteredTypeData = typeData
+    .filter((item) => item.value > 0)
+    .map((item) => ({
+        ...item,
+        name: item.name
+        .split("-")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" "),
+    }));
 
     return (
         <div className="p-4">
@@ -78,60 +86,60 @@ const Home: React.FC = () => {
             </button>
 
             <p className="mt-4 text-sm text-gray-700">{status}</p>
-
-            {/* Пирог */}
-            {filteredVendorData.length > 0 && (
-                <div className="mt-10">
-                    <h2 className="text-lg font-semibold mb-4">Уязвимости по вендорам</h2>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                        <Pie
-                            data={filteredVendorData}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={100}
-                            fill="#8884d8"
-                            label
-                        >
-                            {filteredVendorData.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-            )}
-            {/* Пирог */}
-            {filteredTypeData.length > 0 && (
-                <div className="mt-10">
-                    <h2 className="text-lg font-semibold mb-4">Уязвимости по типам</h2>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                        <Pie
-                            data={filteredTypeData}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={100}
-                            fill="#8884d8"
-                            label
-                        >
-                            {filteredTypeData.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-            )}
-            
+            <div className="flex justify-center gap-10 mt-10 w-full">
+                {/* Пирог */}
+                {filteredVendorData.length > 0 && (
+                    <div className="mt-10 w-full max-w-[500px] flex flex-col items-center">
+                        <h2 className="text-lg font-semibold mb-4">Vulnerabilities by vendor</h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                            <Pie
+                                data={filteredVendorData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={100}
+                                fill="#8884d8"
+                                label
+                            >
+                                {filteredVendorData.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
+                {/* Пирог */}
+                {filteredTypeData.length > 0 && (
+                    <div className="mt-10 w-full max-w-[500px] flex flex-col items-center">
+                        <h2 className="text-lg font-semibold mb-4">Vulnerabilities by type</h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                            <Pie
+                                data={filteredTypeData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={100}
+                                fill="#8884d8"
+                                label
+                            >
+                                {filteredTypeData.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
+            </div>
             {top10 && Object.entries(top10).map(([deviceType, { top, bottom }]) => {
             const maxLength = Math.max(top.length, bottom.length);
             const topList = [...top, ...Array(maxLength - top.length).fill(null)];
@@ -146,21 +154,27 @@ const Home: React.FC = () => {
                     <div className="flex gap-4 w-full">
                         {!isBottomEmpty && (
                         <div className={`border rounded w-full ${isTopEmpty ? "col-span-2" : ""}`}>
-                            <h3 className="bg-gray-200 px-4 py-2 text-center font-semibold">Recommended devices</h3>
+                            <h3 className="bg-green-200 text-green-800 px-4 py-2 text-center font-semibold">Recommended devices</h3>
                             <table className="w-full table-fixed">
                             <thead>
-                                <tr className="bg-gray-100">
+                                <tr className="bg-green-100">
                                 <th className="text-left px-4 py-2 w-1/12">#</th>
                                 <th className="text-left px-4 py-2 w-2/3">Device</th>
-                                <th className="text-left px-4 py-2 w-1/3">Avg Base Score</th>
+                                <th className="text-center px-4 py-2 w-1/3">Avg Base Score</th>
+                                <th className="text-center px-4 py-2 w-1/3">Avg Exploitability Score</th>
+                                <th className="text-center px-4 py-2 w-1/3">Avg Impact Score</th>
+                                <th className="text-center px-4 py-2 w-1/3">Vulnerabilities</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {bottomList.map((item, index) => (
-                                <tr key={index} className="odd:bg-white even:bg-gray-50">
+                                <tr key={index} className="odd:bg-white even:bg-green-50">
                                     <td className="px-4 py-2">{index + 1}</td>
                                     <td className="px-4 py-2">{item?.device || ""}</td>
-                                    <td className="px-4 py-2">{item?.avg_base_score ?? ""}</td>
+                                    <td className="px-4 py-2 text-center">{item?.avg_base_score ?? ""}</td>
+                                    <td className="px-4 py-2 text-center">{item?.avg_exploitability_score ?? ""}</td>
+                                    <td className="px-4 py-2 text-center">{item?.avg_impact_score ?? ""}</td>
+                                    <td className="px-4 py-2 text-center">{item?.vuln_count ?? ""}</td>
                                 </tr>
                                 ))}
                             </tbody>
@@ -169,21 +183,27 @@ const Home: React.FC = () => {
                         )}
                         {!isTopEmpty && (
                         <div className={`border rounded w-full ${isBottomEmpty ? "col-span-2" : ""}`}>
-                            <h3 className="bg-gray-200 px-4 py-2 text-center font-semibold">Not recommended devices</h3>
+                            <h3 className="bg-red-200 text-red-800 px-4 py-2 text-center font-semibold">Not recommended devices</h3>
                             <table className="w-full table-fixed">
                             <thead>
-                                <tr className="bg-gray-100">
+                                <tr className="bg-red-100">
                                 <th className="text-left px-4 py-2 w-1/12">#</th>
                                 <th className="text-left px-4 py-2 w-2/3">Device</th>
-                                <th className="text-left px-4 py-2 w-1/3">Avg Base Score</th>
+                                <th className="text-center px-4 py-2 w-1/3">Avg Base Score</th>
+                                <th className="text-center px-4 py-2 w-1/3">Avg Exploitability Score</th>
+                                <th className="text-center px-4 py-2 w-1/3">Avg Impact Score</th>
+                                <th className="text-center px-4 py-2 w-1/3">Vulnerabilities</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {topList.map((item, index) => (
-                                <tr key={index} className="odd:bg-white even:bg-gray-50">
+                                <tr key={index} className="odd:bg-white even:bg-red-50">
                                     <td className="px-4 py-2">{index + 1}</td>
                                     <td className="px-4 py-2">{item?.device || ""}</td>
-                                    <td className="px-4 py-2">{item?.avg_base_score ?? ""}</td>
+                                    <td className="px-4 py-2 text-center">{item?.avg_base_score ?? ""}</td>
+                                    <td className="px-4 py-2 text-center">{item?.avg_exploitability_score ?? ""}</td>
+                                    <td className="px-4 py-2 text-center">{item?.avg_impact_score ?? ""}</td>
+                                    <td className="px-4 py-2 text-center">{item?.vuln_count ?? ""}</td>
                                 </tr>
                                 ))}
                             </tbody>
