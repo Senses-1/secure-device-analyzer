@@ -9,7 +9,6 @@ const Devices = {
     { label: "HPE", value: "Hpe" },
     { label: "Huawei", value: "Huawei" },
     { label: "Juniper", value: "Juniper" },
-    { label: "MikroTik", value: "Mikrotik" },
   ],
   type: [
     { label: "Access Point", value: "access-point" },
@@ -214,6 +213,10 @@ const FiltersPanel = () => {
         })
         .catch((err) => console.error(`Ошибка запроса (${label}):`, err));
     };
+
+    useEffect(() => {
+      applyFilters();
+    }, []);
 
     const applyFilters = () => {
       const params = new URLSearchParams();

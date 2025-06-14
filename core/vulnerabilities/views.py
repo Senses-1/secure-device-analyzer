@@ -35,6 +35,10 @@ def upload_csv(request):
         for row in reader:
             try:
                 cleaned_row = {k.strip(): (v.strip() if v else "") for k, v in row.items()}
+
+                if cleaned_row.get("Type", "").lower() == "unknown":
+                    continue
+
                 vector = parse_vector_string(cleaned_row.get("VectorString", ""))
 
                 av = attack_vector.objects.get_or_create(name=vector.get("AV", cleaned_row.get("attack_vector", "")))[0]

@@ -68,27 +68,27 @@ const Home: React.FC = () => {
             {/* Пирог */}
             {vendorData.length > 0 && (
                 <div className="mt-10">
-                <h2 className="text-lg font-semibold mb-4">Уязвимости по вендорам</h2>
-                <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                    <Pie
-                        data={vendorData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        fill="#8884d8"
-                        label
-                    >
-                        {vendorData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                    </PieChart>
-                </ResponsiveContainer>
+                    <h2 className="text-lg font-semibold mb-4">Уязвимости по вендорам</h2>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                        <Pie
+                            data={vendorData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            fill="#8884d8"
+                            label
+                        >
+                            {vendorData.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
                 </div>
             )}
         </div>
