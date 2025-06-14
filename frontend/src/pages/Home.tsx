@@ -1,8 +1,16 @@
 import React, { useState } from "react";
+import {
+  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer
+} from "recharts";
+import { useContext } from "react";
+import { DataContext } from "../context/DataContext";
+
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
 
 const Home: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<string>("");
+    const { data } = useContext(DataContext)!;
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -31,6 +39,11 @@ const Home: React.FC = () => {
         setStatus("Ошибка при загрузке файла.");
         }
     };
+
+    const vendorData = Object.entries(data["vuln_by_vendor"] || {}).map(
+    ([name, value]) => ({ name, value })
+    );
+
     return (
         <div className="p-4">
             <h1 className="text-xl font-bold mb-4">Загрузка CSV</h1>
@@ -51,6 +64,33 @@ const Home: React.FC = () => {
             </button>
 
             <p className="mt-4 text-sm text-gray-700">{status}</p>
+
+            {/* Пирог */}
+            {vendorData.length > 0 && (
+                <div className="mt-10">
+                <h2 className="text-lg font-semibold mb-4">Уязвимости по вендорам</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                    <Pie
+                        data={vendorData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        fill="#8884d8"
+                        label
+                    >
+                        {vendorData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                    </PieChart>
+                </ResponsiveContainer>
+                </div>
+            )}
         </div>
     )
 }

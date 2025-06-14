@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import RangeSlider from "./RangeSlider";
+import { useContext } from "react";
+import { DataContext } from "../context/DataContext";
 
 const Devices = {
   vendor: [
@@ -148,7 +150,6 @@ const FilterDropdown = ({
   setSelected: (selected: string[]) => void;
 }) => {
   const toggleOption = (option: string) => {
-    console.log(option);
     setSelected(
       selected.includes(option)
         ? selected.filter((o) => o !== option)
@@ -199,15 +200,19 @@ const FiltersPanel = () => {
     const [baseScores, setBaseScores] = useState<[number, number]>([0.0, 10.0]);
     const [exploitabilityScores, setExploitabilityScores] = useState<[number, number]>([0.0, 10.0]);
     const [impactScores, setImpactScores] = useState<[number, number]>([0.0, 10.0]);
+    const { setData } = useContext(DataContext)!;
 
     const fetchAndLog = (url: string, label: string) => {
       fetch(url)
         .then((res) => res.json())
-        .then((data) => {
-          console.log(`📊 Ответ с бэка (${label}):`, data);
-          // Место для дальнейшей обработки, если нужно
+        .then((fetchedData) => {
+          console.log(`Ответ с бэка (${label}):`, fetchedData);
+          setData((prev) => ({
+            ...prev,
+            [label]: fetchedData, // сохраняем результат под ключом label
+          }));
         })
-        .catch((err) => console.error(`❌ Ошибка запроса (${label}):`, err));
+        .catch((err) => console.error(`Ошибка запроса (${label}):`, err));
     };
 
     const applyFilters = () => {
@@ -229,17 +234,11 @@ const FiltersPanel = () => {
         });
       }
 
-      // ⬅️ Выводим в консоль всё, что отправим
-      console.log("➡️ Отправляемые параметры:");
-      for (const [key, value] of params.entries()) {
-        console.log(`${key} = ${value}`);
-      }
-
       // Список конечных точек
       const endpoints = [
-        { url: "/vulnerabilities/count_vulnerabilities_by_vendor/", label: "по вендорам" },
-        { url: "/vulnerabilities/count_vulnerabilities_by_type/", label: "по типам устройств" },
-        { url: "/vulnerabilities/top_10_devices_by_base_score/", label: "топ 10" },
+        { url: "/vulnerabilities/count_vulnerabilities_by_vendor/", label: "vuln_by_vendor" },
+        { url: "/vulnerabilities/count_vulnerabilities_by_type/", label: "vuln_by_device" },
+        { url: "/vulnerabilities/top_10_devices_by_base_score/", label: "top_10" },
         // можно добавлять новые эндпоинты здесь
       ];
 
