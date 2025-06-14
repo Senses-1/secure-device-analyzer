@@ -3,6 +3,7 @@ from django.http import JsonResponse
 import csv
 import io
 from django.db.models import Count, Avg, Q
+from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 from .models import Device, Vendor, Type, Vulnerability, attack_vector, attack_complexity, privileges_required, user_interaction, scope, confidentiality, integrity, availability
 from .filters import data_by_filters
@@ -53,23 +54,25 @@ def upload_csv(request):
                 type_ = Type.objects.get_or_create(name=cleaned_row["Type"])[0]
                 device = Device.objects.get_or_create(name=cleaned_row["Device"], vendor=vendor, type=type_)[0]
 
-                vuln, _ = Vulnerability.objects.get_or_create(
-                    cve=cleaned_row["CVE"],
-                    defaults={
-                        "BaseScore": cleaned_row["BaseScore"],
-                        "ExploitabilityScore": cleaned_row["ExploitabilityScore"],
-                        "ImpactScore": cleaned_row["ImpactScore"],
-                        "attack_vector": av,
-                        "attack_complexity": ac,
-                        "privileges_required": pr,
-                        "user_interaction": ui,
-                        "scope": sc,
-                        "confidentiality": cf,
-                        "integrity": it,
-                        "availability": avl,
-                    }
-                )
-
+                try:
+                    vuln, _ = Vulnerability.objects.get_or_create(
+                        cve=cleaned_row["CVE"],
+                        defaults={
+                            "BaseScore": cleaned_row["BaseScore"],
+                            "ExploitabilityScore": cleaned_row["ExploitabilityScore"],
+                            "ImpactScore": cleaned_row["ImpactScore"],
+                            "attack_vector": av,
+                            "attack_complexity": ac,
+                            "privileges_required": pr,
+                            "user_interaction": ui,
+                            "scope": sc,
+                            "confidentiality": cf,
+                            "integrity": it,
+                            "availability": avl,
+                        }
+                    )
+                except IntegrityError:
+                    continue  # или логируй, если хочешь видеть, какие записи были пропущены
                 device.Vulnerabilities.add(vuln)
                 created += 1
             except Exception as e:
@@ -78,6 +81,7 @@ def upload_csv(request):
         return JsonResponse({"message": f"Успешно загружено: {created} записей"})
 
     return JsonResponse({"error": "Нет файла в запросе"}, status=400)
+
 
 def count_vulnerabilities_by_vendor(request):
     try:
