@@ -7,10 +7,16 @@ import { DataContext } from "../context/DataContext";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#a4de6c"];
 
+type Top10Table = {
+  top: { device: string; avg_base_score: string }[];
+  bottom: { device: string; avg_base_score: string }[];
+};
+
 const Home: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<string>("");
     const { data } = useContext(DataContext)!;
+    const top10 = data["top_10"] as Record<string, Top10Table>;
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -125,6 +131,69 @@ const Home: React.FC = () => {
                     </ResponsiveContainer>
                 </div>
             )}
+            
+            {top10 && Object.entries(top10).map(([deviceType, { top, bottom }]) => {
+            const maxLength = Math.max(top.length, bottom.length);
+            const topList = [...top, ...Array(maxLength - top.length).fill(null)];
+            const bottomList = [...bottom, ...Array(maxLength - bottom.length).fill(null)];
+
+            const isTopEmpty = top.length === 0;
+            const isBottomEmpty = bottom.length === 0;
+
+            return (
+                <div key={deviceType} className="mt-10">
+                    <h2 className="text-lg font-bold capitalize mb-2">{deviceType.replace(/-/g, " ")}</h2>
+                    <div className="flex gap-4 w-full">
+                        {!isBottomEmpty && (
+                        <div className={`border rounded w-full ${isTopEmpty ? "col-span-2" : ""}`}>
+                            <h3 className="bg-gray-200 px-4 py-2 text-center font-semibold">Recommended devices</h3>
+                            <table className="w-full table-fixed">
+                            <thead>
+                                <tr className="bg-gray-100">
+                                <th className="text-left px-4 py-2 w-1/12">#</th>
+                                <th className="text-left px-4 py-2 w-2/3">Device</th>
+                                <th className="text-left px-4 py-2 w-1/3">Avg Base Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {bottomList.map((item, index) => (
+                                <tr key={index} className="odd:bg-white even:bg-gray-50">
+                                    <td className="px-4 py-2">{index + 1}</td>
+                                    <td className="px-4 py-2">{item?.device || ""}</td>
+                                    <td className="px-4 py-2">{item?.avg_base_score ?? ""}</td>
+                                </tr>
+                                ))}
+                            </tbody>
+                            </table>
+                        </div>
+                        )}
+                        {!isTopEmpty && (
+                        <div className={`border rounded w-full ${isBottomEmpty ? "col-span-2" : ""}`}>
+                            <h3 className="bg-gray-200 px-4 py-2 text-center font-semibold">Not recommended devices</h3>
+                            <table className="w-full table-fixed">
+                            <thead>
+                                <tr className="bg-gray-100">
+                                <th className="text-left px-4 py-2 w-1/12">#</th>
+                                <th className="text-left px-4 py-2 w-2/3">Device</th>
+                                <th className="text-left px-4 py-2 w-1/3">Avg Base Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {topList.map((item, index) => (
+                                <tr key={index} className="odd:bg-white even:bg-gray-50">
+                                    <td className="px-4 py-2">{index + 1}</td>
+                                    <td className="px-4 py-2">{item?.device || ""}</td>
+                                    <td className="px-4 py-2">{item?.avg_base_score ?? ""}</td>
+                                </tr>
+                                ))}
+                            </tbody>
+                            </table>
+                        </div>
+                        )}
+                    </div>
+                </div>
+            );
+            })}
         </div>
     )
 }
