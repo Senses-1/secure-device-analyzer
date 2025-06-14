@@ -1,1 +1,1 @@
-web: gunicorn secure_device_analyzer.wsgi --timeout 600
+web: gunicorn mysite.wsgi --timeout 600
