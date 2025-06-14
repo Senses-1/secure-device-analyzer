@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Filters from "../components/Filters";
 
 const Home: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);

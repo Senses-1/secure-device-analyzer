@@ -35,24 +35,24 @@ def upload_csv(request):
                 cleaned_row = {k.strip(): (v.strip() if v else "") for k, v in row.items()}
                 vector = parse_vector_string(cleaned_row.get("VectorString", ""))
 
-                av = attack_vector.objects.get_or_create(name=vector.get("AV", row.get("attack_vector", "")))[0]
-                ac = attack_complexity.objects.get_or_create(name=vector.get("AC", row.get("attack_complexity", "")))[0]
-                pr = privileges_required.objects.get_or_create(name=vector.get("PR", row.get("privileges_required", "")))[0]
-                ui = user_interaction.objects.get_or_create(name=vector.get("UI", row.get("user_interaction", "")))[0]
-                sc = scope.objects.get_or_create(name=vector.get("S", row.get("scope", "")))[0]
-                cf = confidentiality.objects.get_or_create(name=vector.get("C", row.get("confidentiality", "")))[0]
-                it = integrity.objects.get_or_create(name=vector.get("I", row.get("integrity", "")))[0]
-                avl = availability.objects.get_or_create(name=vector.get("A", row.get("availability", "")))[0]
-                vendor = Vendor.objects.get_or_create(name=row["Vendor"])[0]
-                type_ = Type.objects.get_or_create(name=row["Type"])[0]
-                device = Device.objects.get_or_create(name=row["Device"], vendor=vendor, type=type_)[0]
+                av = attack_vector.objects.get_or_create(name=vector.get("AV", cleaned_row.get("attack_vector", "")))[0]
+                ac = attack_complexity.objects.get_or_create(name=vector.get("AC", cleaned_row.get("attack_complexity", "")))[0]
+                pr = privileges_required.objects.get_or_create(name=vector.get("PR", cleaned_row.get("privileges_required", "")))[0]
+                ui = user_interaction.objects.get_or_create(name=vector.get("UI", cleaned_row.get("user_interaction", "")))[0]
+                sc = scope.objects.get_or_create(name=vector.get("S", cleaned_row.get("scope", "")))[0]
+                cf = confidentiality.objects.get_or_create(name=vector.get("C", cleaned_row.get("confidentiality", "")))[0]
+                it = integrity.objects.get_or_create(name=vector.get("I", cleaned_row.get("integrity", "")))[0]
+                avl = availability.objects.get_or_create(name=vector.get("A", cleaned_row.get("availability", "")))[0]
+                vendor = Vendor.objects.get_or_create(name=cleaned_row["Vendor"])[0]
+                type_ = Type.objects.get_or_create(name=cleaned_row["Type"])[0]
+                device = Device.objects.get_or_create(name=cleaned_row["Device"], vendor=vendor, type=type_)[0]
 
                 vuln, _ = Vulnerability.objects.get_or_create(
-                    cve=row["CVE"],
+                    cve=cleaned_row["CVE"],
                     defaults={
-                        "BaseScore": row["BaseScore"],
-                        "ExploitabilityScore": row["ExploitabilityScore"],
-                        "ImpactScore": row["ImpactScore"],
+                        "BaseScore": cleaned_row["BaseScore"],
+                        "ExploitabilityScore": cleaned_row["ExploitabilityScore"],
+                        "ImpactScore": cleaned_row["ImpactScore"],
                         "attack_vector": av,
                         "attack_complexity": ac,
                         "privileges_required": pr,
@@ -102,14 +102,25 @@ def get_filter_options(request):
     return JsonResponse(data)
 
 def count_vulnerabilities_by_vendor(request):
+    print("Полученные GET-параметры:")
     vuln_filter, device_filter = data_by_filters(request)
+    for k, v in request.GET.lists():
+        print(f"{k} = {v}")
+
+    print("Кол-во Vulnerability ДО фильтрации:", Vulnerability.objects.count())
+    print("Кол-во Device ДО фильтрации:", Device.objects.count())
+    print("Сформированный vuln_filter:", vuln_filter)
+    print("Сформированный device_filter:", device_filter)
 
     vulns = Vulnerability.objects.filter(vuln_filter)
-    devices = Device.objects.filter(device_filter, Vulnerabilities__in=vulns).distinct()
+    print("Кол-во Vulnerability ПОСЛЕ фильтрации:", vulns.count())
+    devices = Device.objects.filter(device_filter)
+    print("Кол-во Device ПОСЛЕ фильтрации:", devices.count())
 
-    result = {
-        vendor.name: devices.filter(vendor=vendor).count()
-        for vendor in Vendor.objects.all()
-    }
-
+    result = {}
+    for vendor in Vendor.objects.all():
+        vendor_devices = devices.filter(vendor=vendor)
+        vulnerabilities = Vulnerability.objects.filter(vuln_filter, device__in=vendor_devices).distinct()
+        result[vendor.name] = vulnerabilities.count()
+    
     return JsonResponse(result)

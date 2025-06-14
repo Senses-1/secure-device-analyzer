@@ -178,12 +178,6 @@ const FilterDropdown = ({
 };
 
 const FiltersPanel = () => {
-    const allFilterKeys = [
-        ...Object.keys(Devices),
-        ...Object.keys(Exploitability_Metrics),
-        ...Object.keys(Impact_Metrics),
-    ];
-
     const getInitialSelectedFilters = (): Record<string, string[]> => {
     return {
         ...Object.fromEntries(
@@ -205,6 +199,41 @@ const FiltersPanel = () => {
     const [baseScores, setBaseScores] = useState<[number, number]>([0.0, 10.0]);
     const [exploitabilityScores, setExploitabilityScores] = useState<[number, number]>([0.0, 10.0]);
     const [impactScores, setImpactScores] = useState<[number, number]>([0.0, 10.0]);
+
+    const applyFilters = () => {
+      const params = new URLSearchParams();
+
+      // Добавляем числовые диапазоны
+      params.append("base_score_min", String(baseScores[0]));
+      params.append("base_score_max", String(baseScores[1]));
+      params.append("exploitability_score_min", String(exploitabilityScores[0]));
+      params.append("exploitability_score_max", String(exploitabilityScores[1]));
+      params.append("impact_score_min", String(impactScores[0]));
+      params.append("impact_score_max", String(impactScores[1]));
+
+      // Добавляем фильтры
+      for (const [key, values] of Object.entries(selectedFilters)) {
+        values.forEach((value) => {
+          // Учитываем Django-совместную нотацию массива: field[]=value
+          params.append(`${key}[]`, value);
+        });
+      }
+
+      // ⬅️ Выводим в консоль всё, что отправим
+      console.log("➡️ Отправляемые параметры:");
+      for (const [key, value] of params.entries()) {
+        console.log(`${key} = ${value}`);
+      }
+
+      // Отправляем GET-запрос
+      fetch(`/vulnerabilities/count_vulnerabilities_by_vendor/?${params.toString()}`)
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("Ответ с бэка:", data);
+          // тут можно будет обновить график, таблицу и т.д.
+        })
+        .catch((err) => console.error("Ошибка запроса:", err));
+    };
 
     return (
         <div className="flex gap-10 p-4 bg-yellow-600 text-black w-full">
@@ -236,6 +265,7 @@ const FiltersPanel = () => {
             sliderLabel="Impact Score"
             />
             <button
+            onClick={applyFilters}
             className="font-bold text-center border border-white rounded px-4 py-2 w-64 bg-gradient-to-br from-yellow-600 to-yellow-800 text-white hover:from-yellow-700 hover:to-yellow-900 transition shadow-md hover:shadow-lg"
             >
             Apply filters

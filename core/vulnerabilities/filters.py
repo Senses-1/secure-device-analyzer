@@ -15,7 +15,7 @@ def data_by_filters(request):
     if exploitability_min and exploitability_max:
         vuln_filter &= Q(ExploitabilityScore__gte=exploitability_min, ExploitabilityScore__lte=exploitability_max)
     if impact_min and impact_max:
-        vuln_filter &= Q(ІmpactScore__gte=impact_min, ІmpactScore__lte=impact_max)
+        vuln_filter &= Q(ImpactScore__gte=impact_min, ImpactScore__lte=impact_max)
 
     attack_vectors = request.GET.getlist('attack_vector[]')
     attack_complexitys = request.GET.getlist('attack_complexity[]')
@@ -45,12 +45,9 @@ def data_by_filters(request):
 
     # Фильтры для модели Device
     device_filter = Q()
-    devices = request.GET.getlist('devices[]')
-    types = request.GET.getlist('types[]')
-    vendors = request.GET.getlist('vendors[]')
+    types = request.GET.getlist('type[]')
+    vendors = request.GET.getlist('vendor[]')
 
-    if devices:
-        device_filter &= Q(name__in=devices)
     if types:
         device_filter &= Q(type__name__in=types)
     if vendors:
