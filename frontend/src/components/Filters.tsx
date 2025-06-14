@@ -240,7 +240,7 @@ const FiltersPanel = () => {
       // Список конечных точек
       const endpoints = [
         { url: "/vulnerabilities/count_vulnerabilities_by_vendor/", label: "vuln_by_vendor" },
-        { url: "/vulnerabilities/count_vulnerabilities_by_type/", label: "vuln_by_device" },
+        { url: "/vulnerabilities/count_vulnerabilities_by_type/", label: "vuln_by_type" },
         { url: "/vulnerabilities/top_10_devices_by_base_score/", label: "top_10" },
         // можно добавлять новые эндпоинты здесь
       ];

@@ -41,8 +41,16 @@ const Home: React.FC = () => {
     };
 
     const vendorData = Object.entries(data["vuln_by_vendor"] || {}).map(
-    ([name, value]) => ({ name, value })
+    ([name, value]) => ({ name, value: Number(value) })
     );
+
+    const filteredVendorData = vendorData.filter((item) => item.value > 0);
+
+    const typeData = Object.entries(data["vuln_by_type"] || {}).map(
+    ([name, value]) => ({ name, value: Number(value) })
+    );
+
+    const filteredTypeData = typeData.filter((item) => item.value > 0);
 
     return (
         <div className="p-4">
@@ -66,13 +74,13 @@ const Home: React.FC = () => {
             <p className="mt-4 text-sm text-gray-700">{status}</p>
 
             {/* Пирог */}
-            {vendorData.length > 0 && (
+            {filteredVendorData.length > 0 && (
                 <div className="mt-10">
                     <h2 className="text-lg font-semibold mb-4">Уязвимости по вендорам</h2>
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                         <Pie
-                            data={vendorData}
+                            data={filteredVendorData}
                             dataKey="value"
                             nameKey="name"
                             cx="50%"
@@ -81,7 +89,33 @@ const Home: React.FC = () => {
                             fill="#8884d8"
                             label
                         >
-                            {vendorData.map((_, index) => (
+                            {filteredVendorData.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            )}
+            {/* Пирог */}
+            {filteredTypeData.length > 0 && (
+                <div className="mt-10">
+                    <h2 className="text-lg font-semibold mb-4">Уязвимости по типам</h2>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                        <Pie
+                            data={filteredTypeData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            fill="#8884d8"
+                            label
+                        >
+                            {filteredTypeData.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
